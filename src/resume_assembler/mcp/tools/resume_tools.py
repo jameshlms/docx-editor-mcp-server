@@ -1,19 +1,17 @@
 from collections.abc import Mapping
 from logging import getLogger
 from typing import Any
-from uuid import uuid4
 
 from renderers import docx
 from robyn import BaseRobyn
 from services import WorkspaceService
+from utils.payload import EXAMPLE_PAYLOAD, Payload
 
 logger = getLogger(__name__)
 
 
 def register(app: BaseRobyn) -> None:
     logger.info("Registering docx tools MCP...")
-
-    workspace_service = WorkspaceService(root_parent=".")
 
     try:
         mcp = app.mcp
@@ -22,41 +20,69 @@ def register(app: BaseRobyn) -> None:
         logger.error(f"Failed to get MCP from app: {e}")
         return
 
+    logger.info("Successfully obtained MCP from app.")
+
+    logger.info("Setting up WorkspaceService...")
+    workspace_service = WorkspaceService(root_parent=".")
+    logger.info("WorkspaceService setup complete.")
+
     @mcp.tool()
     def initialize_resume(user_id: str) -> Mapping[str, Any]:
-        job_id = str(uuid4().hex)
-        workspace_service.create_artifact(user_id, job_id)
+        render_id = str(1234)
+        workspace_service.create_artifact(user_id, render_id)
+        docx.create_document(
+            workspace_service.get_artifact(user_id, render_id) / "resume.docx"
+        )
 
         logger.info(
-            f"Initialized resume workspace for user_id: {user_id}, job_id: {job_id}"
+            f"Initialized resume workspace for user_id: {user_id}, render_id: {render_id}"
         )
 
         return {
             "ok": True,
-            "job_id": job_id,
+            "render_id": render_id,
         }
 
     logger.info(f"Registered {initialize_resume.__name__} in MCP tools.")
 
-    @mcp.tool()
+    @mcp.tool(
+        name="render_resume",
+        description="Render a resume document in DOCX format.",
+        input_schema={
+            "type": "object",
+            "properties": {
+                "user_id": {"type": "string", "description": "The user ID."},
+                "render_id": {
+                    "type": "string",
+                    "description": "The render ID provided upon initialization.",
+                },
+                "payload": {
+                    "type": "object",
+                    "description": "The payload containing resume data.",
+                    "examples": [EXAMPLE_PAYLOAD],
+                },
+            },
+            "required": ["user_id", "render_id", "payload"],
+        },
+    )
     def render_resume(
         user_id: str,
-        job_id: str,
-        payload: dict[str, Any],
+        render_id: str,
+        payload: Payload,
     ) -> Mapping[str, Any]:
-        path = workspace_service.get_artifact(user_id, job_id)
+        path = workspace_service.get_artifact(user_id, render_id) / "resume.docx"
         try:
             docx.render(path, payload)
 
         except Exception as e:
             logger.error(
-                f"Error rendering resume for user_id: {user_id}, job_id: {job_id}: {e}"
+                f"Error rendering resume for user_id: {user_id}, render_id: {render_id}: {e}"
             )
             raise e
 
-        logger.info(f"Rendered resume for user_id: {user_id}, job_id: {job_id}")
+        logger.info(f"Rendered resume for user_id: {user_id}, render_id: {render_id}")
 
-        workspace_service.save_artifact(user_id, job_id)
+        workspace_service.save_artifact(user_id, render_id)
 
         return {
             "ok": True,

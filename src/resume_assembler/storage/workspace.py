@@ -6,7 +6,7 @@ online_storage: OnlineStorage | None = None
 
 WORKSPACE_DIRNAME = "workspace"
 ARTIFACTS_DIRNAME = "artifacts"
-ARTIFACT_FILENAME = "artifact"
+ARTIFACT_FILENAME = "resume.docx"
 METADATA_FILENAME = "metadata.json"
 MANIFEST_FILENAME = "manifest.json"
 
@@ -19,6 +19,7 @@ online_storage: OnlineStorage | None = None
 
 def create_workspace(root_parent: Path | str | None = None) -> Path:
     workspace_dir = Path(root_parent, WORKSPACE_DIRNAME)
+    workspace_dir.mkdir(parents=True, exist_ok=True)
 
     return workspace_dir
 
@@ -39,21 +40,18 @@ def create_artifact(workspace_dir: Path, user_id: str, job_id: str) -> Path:
     path = _job_dir(workspace_dir, user_id, job_id)
     path.mkdir(parents=True, exist_ok=True)
 
-    artifact_path = path / ARTIFACT_FILENAME
-
-    return artifact_path
+    return path
 
 
 def get_artifact(workspace_dir: Path, user_id: str, job_id: str) -> Path:
     path = _job_dir(workspace_dir, user_id, job_id)
 
     if not path.exists():
-        with open(path / ARTIFACT_FILENAME, "rb") as f:
-            path.mkdir(parents=True, exist_ok=True)
+        path.mkdir(parents=True, exist_ok=True)
+        with open(path / ARTIFACT_FILENAME, "wb") as f:
             f.write(online_storage.download(user_id, job_id))
 
-    artifact_path = path / ARTIFACT_FILENAME
-    return artifact_path
+    return path
 
 
 def save_artifact(
@@ -62,8 +60,8 @@ def save_artifact(
     path = _job_dir(workspace_dir, user_id, job_id)
     path.mkdir(parents=True, exist_ok=True)
 
-    artifact_path = path / ARTIFACT_FILENAME
-    with open(artifact_path, "wb") as f:
+    artifact = path / ARTIFACT_FILENAME
+    with open(artifact, "wb") as f:
         online_storage.upload(user_id, job_id, f.read())
 
     if clear_local:

@@ -1,7 +1,7 @@
 from collections.abc import Generator, Iterable, Mapping, Sequence
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, TypeAlias, TypedDict
+from typing import Any
 
 from docx import Document
 from docx.document import Document as DocumentType
@@ -17,16 +17,6 @@ BULLET_STYLE = "List Bullet"
 
 SECTION_HEADING = 1
 ITEM_HEADING = 2
-
-MarginValue: TypeAlias = int | float
-
-
-class SectionItemDict(TypedDict, total=False):
-    title: str
-    start_date: str
-    end_date: str
-    content: str
-    bullets: list[str]
 
 
 def _get_primary_section(doc: DocumentType):
@@ -82,8 +72,8 @@ def _get_document(path: str | Path) -> Generator[DocumentType, None, None]:
 
 
 def _normalize_margins(
-    margins: Sequence[MarginValue] | Mapping[str, MarginValue] | None,
-) -> dict[str, MarginValue | None]:
+    margins: Sequence[int | float] | Mapping[str, int | float] | None,
+) -> dict[str, int | float | None]:
     if margins is None:
         return {}
 
@@ -102,7 +92,7 @@ def _normalize_margins(
 
 def _set_margins(
     doc: DocumentType,
-    margins: Sequence[MarginValue] | Mapping[str, MarginValue] | None = None,
+    margins: Sequence[int | float] | Mapping[str, int | float] | None = None,
 ) -> None:
     """Set the document margins.
 
@@ -201,24 +191,10 @@ def _add_summary(
 def _add_section(
     doc: DocumentType,
     section_headering: str,
-    items: Iterable[SectionItemDict],
+    items: Iterable[Mapping[str, Any]],
     font_name: str,
     font_size: float,
 ) -> None:
-    """Add a section to the document.
-
-    For `SectionItemDict`, the "title" field is required. The "content" and "bullets" fields
-    are optional.
-
-    Args:
-        doc (docx.document.Document): The document to add the section to.
-        section_headering (str): The section_headering for the section.
-        items (Iterable[SectionItemDict]): The section items.
-        font_name (str): The font name for the section.
-        font_size (float): The font size for the section.
-    Raises:
-        ValueError: If a section item is missing a title.
-    """
     doc.add_heading(section_headering, level=SECTION_HEADING)
 
     def assemble_date(start: str | None = None, end: str | None = None) -> str | None:
@@ -260,6 +236,11 @@ def _add_section(
             _write_run_into(b, bullet, font_name, font_size)
 
 
+def create_document(doc_path: str | Path) -> None:
+    doc = Document()
+    doc.save(str(doc_path))
+
+
 def render(
     doc_path: str | Path,
     payload: Payload,
@@ -271,38 +252,40 @@ def render(
         payload (Payload): The payload containing output path information.
     """
     with _get_document(doc_path) as doc:
-        margins = payload.get("configurations", {}).get("margins", None)
+        formatting = payload.get("formatting", {})
+        content = payload.get("content", {})
+        margins = formatting.get("margins", None)
         _set_margins(doc, margins)
 
-        title_text = payload.get("configurations", {}).get("title_text_style", {})
+        title_text = formatting.get("title_text_style", {})
         _add_name(
             doc,
-            payload.get("content", {}).get("name", "Unnamed"),
+            content.get("name", "Unnamed"),
             title_text.get("font_name", "Times New Roman"),
             title_text.get("font_size", 16),
             title_text.get("center", True),
         )
 
-        subtitle_text = payload.get("configurations", {}).get("subtitle_text_style", {})
+        subtitle_text = formatting.get("subtitle_text_style", {})
         _add_contact_line(
             doc,
-            payload.get("content", {}).get("contacts", []),
+            content.get("contacts", []),
             subtitle_text.get("font_name", "Times New Roman"),
             subtitle_text.get("font_size", 14),
             subtitle_text.get("center", True),
         )
 
-        summary_text = payload.get("configurations", {}).get("summary_text_style", {})
+        summary_text = formatting.get("summary_text_style", {})
         _add_summary(
             doc,
-            payload.get("content", {}).get("summary", ""),
+            content.get("summary", ""),
             summary_text.get("font_name", "Times New Roman"),
             summary_text.get("font_size", 11),
             summary_text.get("center", True),
         )
 
-        sections_text = payload.get("configurations", {}).get("sections_text_style", {})
-        sections = payload.get("content", {}).get("sections", [])
+        sections_text = formatting.get("sections_text_style", {})
+        sections = content.get("sections", [])
 
         for section in sections:
             _add_section(
