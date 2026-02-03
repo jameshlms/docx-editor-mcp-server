@@ -1,18 +1,45 @@
-from typing import Any
+from pathlib import Path
 
-from infra.locks.process_lock_handler import ProcessLockHandler
-from sessions import workspace
+from storage import workspace
 
 
-class WorkspaceService:
-    def __init__(self, lock: ProcessLockHandler) -> None:
-        self.lock = lock
+class WorkspaceServiceSingletonMeta(type):
+    _instances: dict = {}
 
-    def create_process(self, user_id: str, process_id: str) -> dict[str, Any]:
-        with self.lock.acquire(user_id, "create_process"):
-            workspace.create_process(user_id, process_id)
-            return {
-                "ok": True,
-                "message": "Successfully created directory for new process.",
-                "process_id": process_id,
-            }
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            instance = super().__call__(*args, **kwargs)
+            cls._instances[cls] = instance
+        return cls._instances[cls]
+
+
+class WorkspaceService(metaclass=WorkspaceServiceSingletonMeta):
+    def __init__(
+        self,
+        root_parent: str,
+    ) -> None:
+        self.workspace_dir = workspace.create_workspace(root_parent)
+
+    def create_artifact(
+        self,
+        user_id: str,
+        process_id: str,
+    ) -> Path:
+        return workspace.create_artifact(self.workspace_dir, user_id, process_id)
+
+    def get_artifact(
+        self,
+        user_id: str,
+        process_id: str,
+    ) -> Path:
+        return workspace.get_artifact(self.workspace_dir, user_id, process_id)
+
+    def save_artifact(
+        self,
+        user_id: str,
+        process_id: str,
+        clear_local: bool = False,
+    ) -> None:
+        return workspace.save_artifact(
+            self.workspace_dir, user_id, process_id, clear_local=clear_local
+        )

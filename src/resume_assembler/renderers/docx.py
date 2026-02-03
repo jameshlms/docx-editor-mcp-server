@@ -81,15 +81,6 @@ def _get_document(path: str | Path) -> Generator[DocumentType, None, None]:
         doc.save(str(path))
 
 
-def set_style(
-    doc_path: str | Path,
-    **style_kwargs: str | float,
-) -> None:
-    with _get_document(doc_path) as doc:
-        styles = doc.styles
-        styles.add_style()
-
-
 def _normalize_margins(
     margins: Sequence[MarginValue] | Mapping[str, MarginValue] | None,
 ) -> dict[str, MarginValue | None]:
@@ -134,20 +125,6 @@ def _set_margins(
     section.left_margin = Inches(left)
 
 
-def set_margins(
-    doc_path: str | Path,
-    margins: list[int | float] | dict[str, int | float] | None = None,
-) -> None:
-    """Set the document margins.
-
-    Args:
-        doc_path (str | Path): The path to the document to set margins for.
-        margins (list[int | float] | dict[str, int | float]): The margins to set.
-    """
-    with _get_document(doc_path) as doc:
-        _set_margins(doc, margins)
-
-
 def _add_name(
     doc: DocumentType,
     text: str,
@@ -161,25 +138,6 @@ def _add_name(
         t.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
     _write_run_into(t, text, font_name, font_size)
-
-
-def add_name(
-    doc_path: str | Path,
-    text: str,
-    font_name: str,
-    font_size: float,
-    center: bool = True,
-) -> None:
-    """Add a name as the title of the document.
-
-    Args:
-        doc_path (str | Path): The path to the document to add the name to.
-        text (str): The name text.
-        font_name (str): The font name for the name.
-        font_size (float): The font size for the name.
-    """
-    with _get_document(doc_path) as doc:
-        _add_name(doc, text, font_name, font_size, center)
 
 
 def _add_contact_line(
@@ -225,26 +183,6 @@ def _add_contact_line(
             _write_run_into(contact_line, " " + sep + " ", font_name, font_size)
 
 
-def add_contact_line(
-    doc_path: str | Path,
-    contacts: list[str | dict[str, str]],
-    font_name: str,
-    font_size: float,
-    center: bool = True,
-    sep: str = "|",
-) -> None:
-    """Add contacts to the document.
-    Args:
-        doc_path (str | Path): The path to the document to add contacts to.
-        contacts (list[str | dict[str, str]]): The contacts to add.
-        font_name (str): The font name for the contacts.
-        font_size (float): The font size for the contacts.
-        sep (str, optional): The separator between contacts. Defaults to "|".
-    """
-    with _get_document(doc_path) as doc:
-        _add_contact_line(doc, contacts, font_name, font_size, center, sep)
-
-
 def _add_summary(
     doc: DocumentType,
     text: str,
@@ -258,25 +196,6 @@ def _add_summary(
         summary.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
     _write_run_into(summary, text, font_name, font_size)
-
-
-def add_summary(
-    doc_path: str | Path,
-    text: str,
-    font_name: str,
-    font_size: float,
-    center: bool = True,
-) -> None:
-    """Add a summary to the document.
-
-    Args:
-        doc_path (str | Path): The path to the document to add the summary to.
-        text (str): The summary text.
-        font_name (str): The font name for the summary.
-        font_size (float): The font size for the summary.
-    """
-    with _get_document(doc_path) as doc:
-        _add_summary(doc, text, font_name, font_size, center)
 
 
 def _add_section(
@@ -341,32 +260,7 @@ def _add_section(
             _write_run_into(b, bullet, font_name, font_size)
 
 
-def add_section(
-    doc_path: str | Path,
-    section_headering: str,
-    items: Iterable[SectionItemDict],
-    font_name: str,
-    font_size: float,
-) -> None:
-    """Add a section to the document.
-
-    For `SectionItemDict`, the "title" field is required. The "content" and "bullets" fields
-    are optional.
-
-    Args:
-        doc_path (str | Path): The path to the document to add the section to.
-        section_headering (str): The section_headering for the section.
-        items (Iterable[SectionItemDict]): The section items.
-        font_name (str): The font name for the section.
-        font_size (float): The font size for the section.
-    Raises:
-        ValueError: If a section item is missing a title.
-    """
-    with _get_document(doc_path) as doc:
-        _add_section(doc, section_headering, items, font_name, font_size)
-
-
-def write_resume(
+def render(
     doc_path: str | Path,
     payload: Payload,
 ) -> None:
