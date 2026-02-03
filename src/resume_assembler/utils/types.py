@@ -1,31 +1,12 @@
 from collections.abc import Mapping, Sequence
-from typing import TypeAlias, TypedDict
-
-from redis import Redis
+from typing import TypeAlias
 
 number: TypeAlias = int | float
 
-JsonValue: TypeAlias = (
-    str | number | bool | None | list["JsonValue"] | dict[str, "JsonValue"]
-)
 
-JsonObject: TypeAlias = Mapping[str, JsonValue]
-
-
-class Content(TypedDict):
-    type: str
-    text: str
-
-
-class StructuredContent(TypedDict):
-    ok: bool
-    message: str
-
-
-class JsonRpcResult(TypedDict):
-    content: Sequence[Content]
-    structuredContent: StructuredContent
-    isError: bool
-
-
-CacheClient: TypeAlias = Redis
+JSONString: TypeAlias = str
+JSONNumber: TypeAlias = float | int
+JSONBoolean: TypeAlias = bool
+JSONNull: TypeAlias = None
+JSONArray: TypeAlias = Sequence
+JSONObject: TypeAlias = Mapping

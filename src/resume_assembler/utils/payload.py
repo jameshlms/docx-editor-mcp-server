@@ -1,153 +1,180 @@
-from typing import TypedDict
+from collections.abc import Sequence
+from textwrap import dedent
+from typing import Final, TypedDict
 
-# {
-#   "configurations": {
-#     "normal_text_style": {
-#       "font_name": "Times New Roman",
-#       "font_size": 11.0
-#     },
-#     "title_text_style": {
-#       "font_name": "Times New Roman",
-#       "font_size": 18.0,
-#       "bold": true
-#     },
-#     "section_header_style": {
-#       "font_name": "Times New Roman",
-#       "font_size": 12.0,
-#       "bold": true,
-#       "underline": true
-#     },
-#     "item_header_style": {
-#       "font_name": "Times New Roman",
-#       "font_size": 11.0,
-#       "bold": true
-#     },
-#     "margins": {
-#       "top": 0.5,
-#       "bottom": 0.5,
-#       "left": 0.75,
-#       "right": 0.75
-#     }
-#   },
-#   "content": {
-#     "name": "James Smith",
-#     "contacts": [
-#       "Charlotte, NC",
-#       { "email": "james.smith@email.com" },
-#       { "phone": "+1 (704) 555-0123" },
-#       { "linkedin": "linkedin.com/in/jamessmith" },
-#       { "github": "github.com/jamessmith" },
-#       { "portfolio": "jamessmith.dev" }
-#     ],
-#     "summary": "Data science student focused on data engineering and ML engineering, building reproducible pipelines and production-ready model serving.",
-#     "sections": [
-#       {
-#         "heading": "Experience",
-#         "items": [
-#           {
-#             "heading": "Teaching Assistant — STAT 1222, UNC Charlotte",
-#             "start_date": "Aug 2025",
-#             "end_date": "Present",
-#             "content": "Supported instruction and grading for introductory statistics; assisted students with problem-solving and tooling.",
-#             "bullets": [
-#               "Led weekly review sessions and clarified core topics (probability, inference, regression).",
-#               "Built lightweight scripts to speed up grading workflows and reduce turnaround time.",
-#               "Provided office hours and individualized feedback to improve student performance."
-#             ]
-#           },
-#           {
-#             "heading": "Data Engineering Intern — Example Company",
-#             "start_date": "May 2025",
-#             "end_date": "Aug 2025",
-#             "content": "Developed ETL pipelines and data validation checks for analytics and reporting.",
-#             "bullets": [
-#               "Implemented ingestion jobs with schema checks and monitoring alerts.",
-#               "Optimized query patterns and reduced pipeline runtime by ~30%.",
-#               "Partnered with stakeholders to define metrics and data quality SLAs."
-#             ]
-#           }
-#         ]
-#       },
-#       {
-#         "heading": "Projects",
-#         "items": [
-#           {
-#             "heading": "Credit Card Fraud Detection Pipeline",
-#             "start_date": "Sep 2025",
-#             "end_date": "Dec 2025",
-#             "content": "End-to-end pipeline with feature engineering, imbalance handling, evaluation, and export for inference.",
-#             "bullets": [
-#               "Trained models with PR-focused evaluation and calibrated thresholds for high precision.",
-#               "Used sampling strategies for extreme class imbalance and tracked experiments.",
-#               "Exported the chosen model to ONNX for cross-language serving."
-#             ]
-#           },
-#           {
-#             "heading": "Exoplanet Discovery Method Classification",
-#             "start_date": "Jan 2025",
-#             "end_date": "Apr 2025",
-#             "content": "Built a classification model to predict discovery method using NASA exoplanet data.",
-#             "bullets": [
-#               "Performed reproducible EDA and feature selection with strong documentation.",
-#               "Trained baseline and tuned models; compared performance across metrics.",
-#               "Packaged training code for repeatable runs and deployment."
-#             ]
-#           }
-#         ]
-#       },
-#       {
-#         "heading": "Education",
-#         "items": [
-#           {
-#             "heading": "B.S. Data Science — University of North Carolina at Charlotte",
-#             "start_date": "Aug 2023",
-#             "end_date": "May 2027",
-#             "content": "Relevant coursework: Data Structures, Database Systems, Machine Learning, Statistics.",
-#             "bullets": null
-#           }
-#         ]
-#       },
-#       {
-#         "heading": "Skills",
-#         "items": [
-#           {
-#             "heading": "Programming & Tools",
-#             "start_date": null,
-#             "end_date": null,
-#             "content": "Python, SQL, C#, Git, Docker, Azure, Linux, Pandas, scikit-learn",
-#             "bullets": null
-#           }
-#         ]
-#       }
-#     ]
-#   }
-# }
+from utils.types import JSONBoolean, JSONNumber, JSONString
+
+EXAMPLE_PAYLOAD: Final[str] = dedent("""\
+{
+  version: "1",
+  configurations: {
+    normal_text_style: {
+      font_name: "Calibri",
+      font_size: 10
+    },
+    title_text_style: {
+      font_name: "Calibri",
+      font_size: 16,
+      bold: true,
+      center: true
+    },
+    section_header_style: {
+      font_name: "Calibri",
+      font_size: 11,
+      bold: true,
+      underline: true
+    },
+    item_header_style: {
+      font_name: "Calibri",
+      font_size: 10.5,
+      bold: true
+    },
+    margins: {
+      top: 0.5,
+      bottom: 0.5,
+      left: 0.7,
+      right: 0.7
+    },
+    item_date_style: {
+      tab_right: true,
+      parentheses_wrap: false,
+      date_format: "month_year_short",
+      delimiter: " — "
+    }
+  },
+
+  content: {
+    name: "Jane Doe",
+    contacts: [
+      { type: "location", value: "Austin, TX" },
+      { type: "email", value: "jane.doe@example.com"},
+      { type: "phone", value: "+1 (555) 555-5555"},
+      { type: "linkedin", value: "linkedin.com/in/janedoe"},
+      { type: "github", value: "github.com/janedoe"},
+      { type: "portfolio", value: "janedoe.dev"}
+    ],
+
+    summary: "Data science student focused on data engineering and ML pipelines. Built reproducible ETL workflows, quality checks, and model training/evaluation tooling for analytics and inference.",
+
+    sections: [
+      {
+        heading: "Experience",
+        items: [
+          {
+            heading: "Data Engineering Intern — Example Company",
+            start_date: "2025-05",
+            end_date: "2025-08",
+            content: "Developed ETL pipelines and data validation checks for analytics and reporting.",
+            bullets: [
+              "Implemented ingestion jobs with schema checks and monitoring alerts.",
+              "Optimized query patterns and reduced pipeline runtime by ~30%.",
+              "Partnered with stakeholders to define metrics and data quality SLAs."
+            ]
+          },
+          {
+            heading: "Teaching Assistant — Example University",
+            start_date: "2024-08",
+            end_date: "present",
+            content: "Supported undergraduate coursework through labs, grading, and office hours.",
+            bullets: [
+              "Led weekly lab sessions covering Python fundamentals and data analysis workflows.",
+              "Created debugging guides that reduced common assignment errors and regrade requests.",
+              "Collaborated with instructors to refine rubrics and improve assignment clarity."
+            ]
+          }
+        ]
+      },
+
+      {
+        heading: "Projects",
+        items: [
+          {
+            heading: "Credit Card Fraud Detection Pipeline",
+            start_date: "2025-09",
+            end_date: "2025-12",
+            content: "End-to-end pipeline with feature engineering, imbalance handling, evaluation, and export for inference.",
+            bullets: [
+              "Trained models with PR-focused evaluation and calibrated thresholds for high precision.",
+              "Applied sampling and class-weighting strategies for extreme class imbalance; tracked experiments.",
+              "Exported the chosen model to ONNX for cross-language serving."
+            ]
+          },
+          {
+            heading: "Exoplanet Discovery Method Classification",
+            start_date: "2025-01",
+            end_date: "2025-04",
+            content: "Built a classification model to predict discovery method using NASA exoplanet data.",
+            bullets: [
+              "Performed reproducible EDA and feature selection with clear documentation.",
+              "Trained baseline and tuned models; compared performance across multiple metrics.",
+              "Packaged training code for repeatable runs and simple deployment."
+            ]
+          }
+        ]
+      },
+
+      {
+        heading: "Education",
+        items: [
+          {
+            heading: "B.S. Data Science — Example University",
+            start_date: "2023-08",
+            end_date: "2027-05",
+            content: "Relevant coursework: Data Structures, Database Systems, Machine Learning, Statistics.",
+            bullets: null
+          }
+        ]
+      },
+
+      {
+        heading: "Skills",
+        items: [
+          {
+            heading: "Programming & Tools",
+            start_date: null,
+            end_date: null,
+            content: "Python, SQL, C#, Git, Docker, Azure, Linux, Pandas, scikit-learn",
+            bullets: null
+          },
+          {
+            heading: "Data Engineering",
+            start_date: null,
+            end_date: null,
+            content: "ETL/ELT, dimensional modeling, data validation, orchestration concepts, monitoring/alerting",
+            bullets: null
+          }
+        ]
+      }
+    ]
+  }
+}
+""").strip()
 
 
 class TextStyleOptions(TypedDict, total=False):
-    font_name: str
-    font_size: float
-    bold: bool
-    italic: bool
-    underline: bool
-    center: bool
+    font_name: JSONString
+    font_size: JSONNumber
+    bold: JSONBoolean
+    italic: JSONBoolean
+    underline: JSONBoolean
+    center: JSONBoolean
 
 
-class MarginOptions(TypedDict):
-    top: float | None
-    bottom: float | None
-    left: float | None
-    right: float | None
+class MarginOptions(TypedDict, total=False):
+    top: JSONNumber
+    bottom: JSONNumber
+    left: JSONNumber
+    right: JSONNumber
 
 
-class ItemDateStyleOptions(TypedDict):
-    tab_right: bool
-    parentheses_wrap: bool
-    date_format: str | None
-    delimiter: str | None
+class ItemDateStyleOptions(TypedDict, total=False):
+    tab_right: JSONBoolean
+    parentheses_wrap: JSONBoolean
+    date_format: JSONString
+    delimiter: JSONString
 
 
-class ResumeConfigurations(TypedDict):
+class ResumeFormatting(TypedDict):
     normal_text_style: TextStyleOptions
     title_text_style: TextStyleOptions
     section_header_style: TextStyleOptions
@@ -156,26 +183,35 @@ class ResumeConfigurations(TypedDict):
     item_date_style: ItemDateStyleOptions
 
 
-class Item(TypedDict):
-    heading: str
-    start_date: str | None
-    end_date: str | None
-    content: str | None
-    bullets: list[str] | None
+class Item(TypedDict, total=False):
+    heading: JSONString
+    org: JSONString
+    location: JSONString
+    start_date: JSONString
+    end_date: JSONString
+    content: JSONString
+    bullets: Sequence[JSONString]
 
 
 class Section(TypedDict):
-    heading: str
-    items: list[Item]
+    heading: JSONString
+    items: Sequence[Item]
 
 
-class ResumeContent(TypedDict):
-    name: str
-    contacts: list[str | dict[str, str]]
-    summary: str | None
-    sections: list[Section]
+class Contact(TypedDict, total=False):
+    type: JSONString
+    display_type: JSONBoolean
+    value: JSONString
+
+
+class ResumeContent(TypedDict, total=False):
+    name: JSONString
+    contacts: Sequence[JSONString | Contact]
+    summary: JSONString
+    sections: Sequence[Section]
 
 
 class Payload(TypedDict):
-    configurations: ResumeConfigurations
+    version: JSONString
+    formatting: ResumeFormatting
     content: ResumeContent
