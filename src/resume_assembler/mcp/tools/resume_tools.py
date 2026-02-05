@@ -1,11 +1,13 @@
 from collections.abc import Mapping
+from json import dumps
 from logging import getLogger
 from typing import Any
+from uuid import uuid4
 
 from renderers import docx
 from robyn import BaseRobyn
 from services import WorkspaceService
-from utils.payload import EXAMPLE_PAYLOAD, Payload
+from utils.payload import Payload
 
 logger = getLogger(__name__)
 
@@ -26,9 +28,9 @@ def register(app: BaseRobyn) -> None:
     workspace_service = WorkspaceService(root_parent=".")
     logger.info("WorkspaceService setup complete.")
 
-    @mcp.tool()
-    def initialize_resume(user_id: str) -> Mapping[str, Any]:
-        render_id = str(1234)
+    @mcp.tool(name="initialize_resume", description="Initialize a resume workspace.")
+    def initialize_resume(user_id: str) -> str:
+        render_id = uuid4().hex
         workspace_service.create_artifact(user_id, render_id)
         docx.create_document(
             workspace_service.get_artifact(user_id, render_id) / "resume.docx"
@@ -38,10 +40,12 @@ def register(app: BaseRobyn) -> None:
             f"Initialized resume workspace for user_id: {user_id}, render_id: {render_id}"
         )
 
-        return {
-            "ok": True,
-            "render_id": render_id,
-        }
+        return dumps(
+            {
+                "ok": True,
+                "render_id": render_id,
+            }
+        )
 
     logger.info(f"Registered {initialize_resume.__name__} in MCP tools.")
 
@@ -59,7 +63,6 @@ def register(app: BaseRobyn) -> None:
                 "payload": {
                     "type": "object",
                     "description": "The payload containing resume data.",
-                    "examples": [EXAMPLE_PAYLOAD],
                 },
             },
             "required": ["user_id", "render_id", "payload"],
