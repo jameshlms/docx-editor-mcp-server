@@ -46,10 +46,15 @@ def create_artifact(workspace_dir: Path, user_id: str, job_id: str) -> Path:
 def get_artifact(workspace_dir: Path, user_id: str, job_id: str) -> Path:
     path = _job_dir(workspace_dir, user_id, job_id)
 
+    if not online_storage.artifact_exists(user_id, job_id) and not path.exists():
+        raise FileNotFoundError(
+            "Artifact does not exist locally or online. The artifact likely was never created or has been deleted."
+        )
+
     if not path.exists():
         path.mkdir(parents=True, exist_ok=True)
         with open(path / ARTIFACT_FILENAME, "wb") as f:
-            f.write(online_storage.download(user_id, job_id))
+            f.write(online_storage.download_artifact(user_id, job_id))
 
     return path
 
@@ -61,8 +66,8 @@ def save_artifact(
     path.mkdir(parents=True, exist_ok=True)
 
     artifact = path / ARTIFACT_FILENAME
-    with open(artifact, "wb") as f:
-        online_storage.upload(user_id, job_id, f.read())
+    with open(artifact, "rb") as f:
+        online_storage.upload_artifact(user_id, job_id, f.read())
 
     if clear_local:
         for item in path.iterdir():
